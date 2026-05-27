@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --cyan: #00d2ff;
+  --cyan-dim: rgba(0, 210, 255, 0.15);
+  --cyan-border: rgba(0, 210, 255, 0.25);
+  --cyan-glow: rgba(0, 210, 255, 0.4);
+  --bg-primary: rgba(8, 10, 16, 0.95);
+  --bg-secondary: rgba(12, 15, 24, 0.8);
+  --text-primary: #e2e8f0;
+  --text-dim: rgba(226, 232, 240, 0.5);
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.app-root {
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow: hidden;
+  border: 1px solid var(--cyan-border);
+  border-radius: 12px;
+}
+
+.loading-screen {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg-primary);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.loading-orb {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--cyan-border);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--cyan-border); border-radius: 2px; }

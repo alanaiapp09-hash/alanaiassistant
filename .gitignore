@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-electron/
+src-tauri/target/
+release/
+*.dmg
+*.exe
+*.app
+public/alan-bg.png
+public/icon.png
+src-tauri/icons/icon.png
+src-tauri/icons/icon.icns
+src-tauri/icons/128x128@2x.png
+src/components/*.backup
+src/components/*.backup2
