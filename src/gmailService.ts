@@ -26,8 +26,8 @@ export interface GmailCredentials {
 export function loadCredentials(): GmailCredentials | null {
   // Credenciales hardcodeadas para beta
   return {
-    client_id: "127414173642-gfv9inp09aru051vevt8au718cg3q9sr.apps.googleusercontent.com",
-    client_secret: "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",
+    client_id: "GOOGLE_CLIENT_ID_HERE",
+    client_secret: "GOOGLE_CLIENT_SECRET_HERE",
     redirect_uri: "http://localhost:3000/callback"
   };
   // eslint-disable-next-line no-unreachable

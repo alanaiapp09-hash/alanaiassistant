@@ -13,3 +13,5 @@ src-tauri/icons/icon.icns
 src-tauri/icons/128x128@2x.png
 src/components/*.backup
 src/components/*.backup2
+google-credentials.json
+google-credentials.json

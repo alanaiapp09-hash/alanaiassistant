@@ -44,10 +44,10 @@ Objetivo: superar a los Jarvis del mercado.
 11. WhatsApp Business (Quantum)
 
 ## APIs y credenciales (solo para desarrollo)
-- DeepSeek: sk-7a1dd11acc2a43a09e7db6b7581255a6
-- Groq: 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
+- DeepSeek: DEEPSEEK_API_KEY_HERE
+- Groq: GROQ_API_KEY_HERE
 - Supabase URL: https://xwbrohzybbtkhusxlrty.supabase.co
-- Supabase Key: sb_publishable_UEE5PS_oU4UHQunrTFeJkA_FJATszEr
+- Supabase Key: SUPABASE_KEY_HERE
 
 ## Contexto personal
 - Usuario: Jay (Jayssam Mokded), Madrid, España

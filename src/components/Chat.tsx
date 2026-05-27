@@ -9,7 +9,7 @@ import {
 } from "../gmailService"
 
 const ALAN_AVATAR = "/icon.png"
-const GROQ_API_KEY = "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"
+const GROQ_API_KEY = "GROQ_API_KEY_HERE"
 const GEMINI_API_KEY = "AIzaSyAhtLOsOJErzgjWu2PZ9qfsDbboGW7amUg"
 const SUPABASE_URL = "https://xwbrohzybbtkhusxlrty.supabase.co"
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3YnJvaHp5YmJ0a2h1c3hscnR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDMxNTcsImV4cCI6MjA5NTA3OTE1N30.Eta_x1sL3I9AWBldjje69girt1rNjksF43gKiv9drRU"
