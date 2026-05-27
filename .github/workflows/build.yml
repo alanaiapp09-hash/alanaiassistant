@@ -23,7 +23,7 @@ jobs:
         run: npm install
         
       - name: Build Windows
-        run: npm run tauri build
+        run: npx tauri build
         env:
           TAURI_PRIVATE_KEY: ''
           TAURI_KEY_PASSWORD: ''
