@@ -1,18 +1,16 @@
 import { defineConfig } from 'vite'
+import path from 'node:path'
+import electron from 'vite-plugin-electron/simple'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
-  clearScreen: false,
   base: './',
-  server: {
-    port: 5173,
-    strictPort: true,
-  },
-  envPrefix: ['VITE_', 'TAURI_'],
-  build: {
-    target: ['es2021', 'chrome100', 'safari13'],
-    minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
-    sourcemap: !!process.env.TAURI_DEBUG,
-  },
+  plugins: [
+    react(),
+    electron({
+      main: { entry: 'electron/main.ts' },
+      preload: { input: path.join(__dirname, 'electron/preload.ts') },
+      renderer: process.env.NODE_ENV === 'test' ? undefined : {},
+    }),
+  ],
 })

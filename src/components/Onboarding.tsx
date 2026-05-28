@@ -309,9 +309,9 @@ async function generateSpeech(text: string): Promise<Blob> {
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
-export default function Onboarding({ onComplete }: { onComplete: (p: Profile) => void }) {
+export default function Onboarding({ onComplete, initialProfile }: { onComplete: (p: Profile) => void, initialProfile?: Profile }) {
   const [sectionIdx, setSectionIdx] = useState(0)
-  const [profile, setProfile] = useState<Profile>({})
+  const [profile, setProfile] = useState<Profile>(initialProfile || {})
   const [sectionData, setSectionData] = useState<Record<string, Profile>>({})
   const [completed, setCompleted] = useState<string[]>([])
   const [isSpeaking, setIsSpeaking] = useState(false)
