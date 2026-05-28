@@ -8,20 +8,28 @@ type Profile = Record<string, string>
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    const api = (window as any).alan
+    if (!api?.onDeepLink) return
+
+    api.onDeepLink((url: string) => {
+      console.log('Deep link recibido:', url)
+      // TODO: manejar alan://gmail y alan://auth en siguiente sprint
+    })
+  }, [])
 
   useEffect(() => {
     const load = async () => {
       try {
-        // Intentar Electron primero
         if ((window as any).alan?.loadProfile) {
           const saved = await (window as any).alan.loadProfile()
           if (saved?.completed) { setProfile(saved); setLoading(false); return }
         }
-        // Fallback localStorage
         const saved = loadProfile()
         if (saved?.completed) { setProfile(saved); setLoading(false); return }
       } catch(_) {
-        // Si falla Electron, usar localStorage
         const saved = loadProfile()
         if (saved?.completed) { setProfile(saved); setLoading(false); return }
       }
@@ -31,15 +39,14 @@ export default function App() {
   }, [])
 
   const handleComplete = async (newProfile: Profile) => {
-    // Guardar siempre en localStorage primero
     saveProfile(newProfile)
-    // Intentar guardar en Electron también
     try {
       if ((window as any).alan?.saveProfile) {
         await (window as any).alan.saveProfile(newProfile)
       }
     } catch(_) {}
     setProfile(newProfile)
+    setEditing(false)
   }
 
   if (loading) return (
@@ -49,9 +56,13 @@ export default function App() {
     </div>
   )
 
+  if (!profile || editing) return (
+    <Onboarding onComplete={handleComplete} initialProfile={editing ? profile || undefined : undefined}/>
+  )
+
   return (
     <div className="app-root">
-      {!profile ? <Onboarding onComplete={handleComplete}/> : <Chat profile={profile}/>}
+      <Chat profile={profile} onEditProfile={() => setEditing(true)}/>
     </div>
   )
 }

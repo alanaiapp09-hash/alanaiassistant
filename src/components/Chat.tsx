@@ -1,21 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { invoke } from "@tauri-apps/api/tauri"
-import { open } from "@tauri-apps/api/shell"
-import { listen } from "@tauri-apps/api/event"
 import { buildSystemPrompt, saveMemory, loadMemory, ConversationMessage } from "./Onboarding"
 import {
   loadCredentials, getAuthUrl, exchangeCodeForTokens, saveTokens,
   loadTokens, getValidAccessToken, getUnreadEmails, formatEmailsForAlan
 } from "../gmailService"
 
-const ALAN_AVATAR = "/icon.png"
-const GROQ_API_KEY = "GROQ_API_KEY_HERE"
-const GEMINI_API_KEY = "AIzaSyAhtLOsOJErzgjWu2PZ9qfsDbboGW7amUg"
+const ALAN_AVATAR = "./icon.png"
+const GROQ_API_KEY = "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"
+const GEMINI_API_KEY = "AIzaSyD-placeholder-replace-with-real-key"
 const SUPABASE_URL = "https://xwbrohzybbtkhusxlrty.supabase.co"
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3YnJvaHp5YmJ0a2h1c3hscnR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDMxNTcsImV4cCI6MjA5NTA3OTE1N30.Eta_x1sL3I9AWBldjje69girt1rNjksF43gKiv9drRU"
+const SUPABASE_KEY = "sb_publishable_UEE5PS_oU4UHQunrTFeJATszEr"
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/dynamic-endpoint`
 
-const USER_PLAN: string = "quantum"
+const USER_PLAN: keyof typeof MESSAGE_LIMITS = "quantum"
 
 const MESSAGE_LIMITS: Record<string, number> = {
   free: 10,
@@ -70,13 +67,13 @@ async function callGemini(systemPrompt: string, messages: {role: string, content
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.content }]
   }))
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents,
-      tools: [{ google_search: {} }], generationConfig: { maxOutputTokens: 1024, temperature: 0.7 }
+      generationConfig: { maxOutputTokens: 1024, temperature: 0.7 }
     })
   })
   if (!res.ok) throw new Error(`Gemini error ${res.status}`)
@@ -98,7 +95,12 @@ async function callClaude(systemPrompt: string, messages: {role: string, content
   return data.text || "No pude procesar esa solicitud."
 }
 
-export default function Chat({ profile }: { profile: Profile }) {
+export default function Chat({
+  profile,
+}: {
+  profile: Profile
+  onEditProfile?: () => void
+}) {
   const name = profile.nickname || profile.fullName || profile.name || "usuario"
 
   const [messages, setMessages] = useState<Message[]>([
@@ -143,8 +145,10 @@ export default function Chat({ profile }: { profile: Profile }) {
     hasGreeted.current = true
     setTimeout(() => speakText(`Sistemas en línea. Hola ${name}, estoy listo.`), 1200)
     if (loadTokens()) setGmailConnected(true)
-    listen("gmail-auth-code", async (event: any) => {
-      await handleGmailCallback(event.payload as string)
+
+    const alan = (window as any).alan
+    alan?.onGmailCode?.(async (code: string) => {
+      await handleGmailCallback(code)
     })
   }, [])
 
@@ -245,8 +249,9 @@ export default function Chat({ profile }: { profile: Profile }) {
     const creds = loadCredentials()
     if (!creds) { addAlanMessage("No encuentro las credenciales de Gmail."); return }
     addAlanMessage("Abriendo el navegador para conectar tu Gmail. Autoriza el acceso y vuelve aquí.")
-    await invoke("gmail_start_server")
-    await open(getAuthUrl(creds))
+    const alan = (window as any).alan
+    await alan?.gmailStartServer?.()
+    await alan?.gmailOpenAuth?.(getAuthUrl(creds))
   }
 
   const handleGmailCallback = async (code: string) => {
@@ -401,18 +406,12 @@ export default function Chat({ profile }: { profile: Profile }) {
           <div className="j-profile-row"><span>MENSAJES</span><span style={{color: msgsLeft === "0" ? "#ff5050" : "#00d2ff"}}>{msgsLeft} restantes</span></div>
         </div>
         <button className="j-reset-btn" onClick={()=>{
-          setMessages([{ id: 1, sender: "alan", text: `Sistemas en línea. Hola ${name}, estoy listo. ¿En qué te ayudo hoy?` }])
+          localStorage.removeItem("alan_profile_v3")
+          localStorage.removeItem("alan_memory_v1")
+          localStorage.removeItem("alan_gmail_tokens")
           localStorage.removeItem("alan_msg_count")
-        }}>↺ Nuevo chat</button>
-        <button className="j-reset-btn" style={{marginTop:4,borderColor:"rgba(255,80,80,0.2)",color:"rgba(255,80,80,0.35)"}} onClick={()=>{
-          if(window.confirm("¿Borrar perfil y volver al inicio?")) {
-            localStorage.removeItem("alan_profile_v3")
-            localStorage.removeItem("alan_memory_v1")
-            localStorage.removeItem("alan_gmail_tokens")
-            localStorage.removeItem("alan_msg_count")
-            window.location.reload()
-          }
-        }}>⚙ Reiniciar perfil</button>
+          window.location.reload()
+        }}>↺ Reiniciar</button>
       </div>
 
       <div className="j-center">
@@ -549,7 +548,7 @@ export default function Chat({ profile }: { profile: Profile }) {
         .j-chat-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(0,210,255,0.1);background:rgba(0,0,0,0.15);flex-shrink:0}
         .j-chat-title{font-family:'Orbitron',sans-serif;font-size:11px;font-weight:700;color:#00d2ff;letter-spacing:3px}
         .j-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;position:relative}
-        .j-messages::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:65%;padding-bottom:65%;background-image:url("/icon.png");background-repeat:no-repeat;background-position:center;background-size:contain;opacity:0.40;pointer-events:none;z-index:0}
+        .j-messages::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:65%;padding-bottom:65%;background-image:url(${JSON.stringify(ALAN_AVATAR)});background-repeat:no-repeat;background-position:center;background-size:contain;opacity:0.15;pointer-events:none;z-index:0}
         .j-messages > *{position:relative;z-index:1}
         .j-msg-row{display:flex;width:100%}
         .j-row-alan{justify-content:flex-start}.j-row-user{justify-content:flex-end}

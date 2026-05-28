@@ -20,12 +20,46 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 const PROFILE_PATH = path.join(app.getPath('userData'), 'alan-profile.json')
 
-let win: BrowserWindow | null
+let win: BrowserWindow | null = null
 let oauthServer: any = null
+let pendingDeepLink: string | null = null
+
+function sendDeepLink(url: string) {
+  if (win?.webContents) {
+    win.webContents.send('deep-link', url)
+  } else {
+    pendingDeepLink = url
+  }
+}
+
+function getDeepLinkFromArgv(argv: string[]) {
+  return argv.find((arg) => arg.startsWith('alan://')) || null
+}
+
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const url = argv.find((arg: string) => arg.startsWith('alan://'))
+    if (url) sendDeepLink(url)
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
+
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  sendDeepLink(url)
+})
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC as string, 'icon.png'),
+    icon: VITE_DEV_SERVER_URL
+      ? path.join(process.env.APP_ROOT as string, 'public', 'icon.png')
+      : path.join(RENDERER_DIST, 'icon.png'),
     width: 1100,
     height: 750,
     minWidth: 800,
@@ -49,7 +83,7 @@ function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString())
-    // Cargar google-credentials.json
+
     const credsPath = path.join(process.env.APP_ROOT as string, 'google-credentials.json')
     if (existsSync(credsPath)) {
       try {
@@ -64,6 +98,11 @@ function createWindow() {
         `)
       } catch(_) {}
     }
+
+    if (pendingDeepLink) {
+      sendDeepLink(pendingDeepLink)
+      pendingDeepLink = null
+    }
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -73,9 +112,6 @@ function createWindow() {
   }
 }
 
-// ── IPC Handlers ─────────────────────────────────────────────────────────────
-
-// Guardar perfil
 ipcMain.handle('save-profile', (_event, profile: any) => {
   try {
     writeFileSync(PROFILE_PATH, JSON.stringify(profile, null, 2), 'utf-8')
@@ -85,7 +121,6 @@ ipcMain.handle('save-profile', (_event, profile: any) => {
   }
 })
 
-// Cargar perfil
 ipcMain.handle('load-profile', () => {
   try {
     if (existsSync(PROFILE_PATH)) {
@@ -95,17 +130,15 @@ ipcMain.handle('load-profile', () => {
   } catch(_) { return null }
 })
 
-// Gmail: abrir URL en navegador
 ipcMain.handle('gmail-open-auth', (_event, authUrl: string) => {
   shell.openExternal(authUrl)
   return true
 })
 
-// Gmail: servidor local para OAuth callback
+// TODO: migrar Gmail OAuth a deep link alan://gmail y eliminar localhost:3000
 ipcMain.handle('gmail-start-server', () => {
   return new Promise((resolve) => {
     if (oauthServer) { oauthServer.close(); oauthServer = null }
-
     oauthServer = createServer((req, res) => {
       const url = new URL(req.url || '', 'http://localhost:3000')
       const code = url.searchParams.get('code')
@@ -120,7 +153,6 @@ ipcMain.handle('gmail-start-server', () => {
         resolve({ success: false })
       }
     })
-
     oauthServer.listen(3000, () => resolve({ success: true, listening: true }))
     oauthServer.on('error', () => resolve({ success: false, error: 'Puerto 3000 ocupado' }))
   })
@@ -130,10 +162,23 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') { app.quit(); win = null }
 })
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
+app.whenReady().then(() => {
+  const initialDeepLink = getDeepLinkFromArgv(process.argv)
+  if (initialDeepLink) {
+    pendingDeepLink = initialDeepLink
+  }
 
-app.whenReady().then(createWindow)
+  if (process.platform === 'darwin') {
+    app.setAsDefaultProtocolClient('alan')
+  } else {
+    app.setAsDefaultProtocolClient('alan', process.execPath, [path.resolve(process.argv[1] || '')])
+  }
+
+  createWindow()
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+})
 
 export { MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL }
